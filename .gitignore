@@ -1,0 +1,15 @@
+# ROS工作空间不需要上传的文件
+build/
+devel/
+install/
+log/
+
+# 系统临时文件
+.DS_Store
+*.pyc
+*.swp
+*~
+
+# IDE配置文件（如果用VSCode/CLion）
+.vscode/
+.idea/

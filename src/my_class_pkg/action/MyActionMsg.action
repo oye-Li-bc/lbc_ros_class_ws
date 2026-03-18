@@ -1,0 +1,9 @@
+# Goal: target count (count up to this number)
+int64 target
+---
+# Result: whether the action finished successfully
+bool success
+---
+# Feedback: current count progress
+int64 current
+float32 progress

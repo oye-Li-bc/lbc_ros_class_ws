@@ -1,0 +1,76 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(my_class_pkg)
+
+# 核心依赖（包含message_generation）
+find_package(catkin REQUIRED COMPONENTS
+  message_generation
+  roscpp
+  rospy
+  std_msgs
+  message_generation
+)
+
+# 自定义消息配置（必须在catkin_package前）
+add_message_files(
+  DIRECTORY msg
+  FILES MyMessage.msg
+)
+
+# 生成消息（依赖std_msgs）
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+# catkin包配置（包含message_runtime）
+catkin_package(
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+)
+
+# 包含目录
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+)
+
+# 1. 标准消息发布者/订阅者
+add_executable(ros_publisher_node src/ros_publisher.cpp)
+target_link_libraries(ros_publisher_node ${catkin_LIBRARIES})
+add_executable(ros_subscriber_node src/ros_subscriber.cpp)
+target_link_libraries(ros_subscriber_node ${catkin_LIBRARIES})
+
+# 2. 自定义消息发布者/订阅者（关键：加add_dependencies关联消息生成）
+add_executable(msg_publisher_node src/msg_publisher.cpp)
+add_dependencies(msg_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(msg_publisher_node ${catkin_LIBRARIES})
+
+add_executable(msg_subscriber_node src/msg_subscriber.cpp)
+add_dependencies(msg_subscriber_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(msg_subscriber_node ${catkin_LIBRARIES})
+
+# 配置服务文件编译
+add_service_files(
+  DIRECTORY srv
+  FILES MyServiceMsg.srv
+)
+
+# 生成服务相关的消息（依赖std_msgs）
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+# 声明catkin依赖（包含message_runtime）
+catkin_package(
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+)
+
+# 编译C++服务端节点
+add_executable(ros_server_node src/ros_server.cpp)
+add_dependencies(ros_server_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ros_server_node ${catkin_LIBRARIES})
+
+# 编译C++客户端节点
+add_executable(ros_client_node src/ros_client.cpp)
+add_dependencies(ros_client_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ros_client_node ${catkin_LIBRARIES})
+
