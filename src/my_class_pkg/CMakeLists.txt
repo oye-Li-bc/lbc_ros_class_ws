@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   actionlib
   actionlib_msgs
+  dynamic_reconfigure
 )
 
 # 2. 添加消息/服务/动作文件
@@ -23,6 +24,10 @@ generate_messages(
   actionlib_msgs
 )
 
+# 2. 添加generate_dynamic_reconfigure_options规则
+generate_dynamic_reconfigure_options(
+  cfg/Tutorials.cfg
+)
 # 4. catkin包配置
 catkin_package(
   CATKIN_DEPENDS roscpp rospy std_msgs message_runtime actionlib actionlib_msgs
@@ -66,3 +71,20 @@ target_link_libraries(ros_ultrasonic_node ${catkin_LIBRARIES})
 # IMU 180°自旋节点编译规则
 add_executable(ros_imu_spin_node src/ros_imu_spin_node.cpp)
 target_link_libraries(ros_imu_spin_node ${catkin_LIBRARIES})
+
+# cpp读取参数节点编译
+add_executable(ros_param src/ros_param.cpp)
+target_link_libraries(ros_param ${catkin_LIBRARIES})
+
+#添加动态参数编译规则
+add_executable(dynamic_reconfigure_node src/dynamic_reconfigure.cpp)
+add_dependencies(dynamic_reconfigure_node ${PROJECT_NAME}_gencfg)
+target_link_libraries(dynamic_reconfigure_node ${catkin_LIBRARIES})
+
+#动态配置小乌龟速度
+add_executable(ros_dynamic_speed_node src/ros_dynamic_speed.cpp)
+add_dependencies(ros_dynamic_speed_node ${PROJECT_NAME}_gencfg)
+target_link_libraries(ros_dynamic_speed_node ${catkin_LIBRARIES})
+
+
+
