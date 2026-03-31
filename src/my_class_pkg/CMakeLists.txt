@@ -86,5 +86,9 @@ add_executable(ros_dynamic_speed_node src/ros_dynamic_speed.cpp)
 add_dependencies(ros_dynamic_speed_node ${PROJECT_NAME}_gencfg)
 target_link_libraries(ros_dynamic_speed_node ${catkin_LIBRARIES})
 
+#LOG节点编译规则
+add_executable(ros_log src/ros_log.cpp)
+target_link_libraries(ros_log ${catkin_LIBRARIES})
+
 
 
