@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   actionlib_msgs
   dynamic_reconfigure
+  tf2_ros
+  upros_message
 )
 
 # 2. 添加消息/服务/动作文件
@@ -90,5 +92,7 @@ target_link_libraries(ros_dynamic_speed_node ${catkin_LIBRARIES})
 add_executable(ros_log src/ros_log.cpp)
 target_link_libraries(ros_log ${catkin_LIBRARIES})
 
-
+#机械臂抓取AQ码小块
+add_executable(tag_grab_node src/tag_grab.cpp)
+target_link_libraries(tag_grab_node ${catkin_LIBRARIES})
 
