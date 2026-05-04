@@ -17,6 +17,8 @@
   <build_depend>actionlib_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_export_depend>tf2_ros</build_export_depend>
+  <build_depend>move_base_msgs</build_depend>
+  <build_export_depend>move_base_msgs</build_export_depend>
 
   <depend>upros_message</depend>
 
@@ -29,6 +31,7 @@
   <exec_depend>actionlib</exec_depend>
   <exec_depend>actionlib_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>move_base_msgs</exec_depend>
   
   <export>
     <build_type>catkin</build_type>

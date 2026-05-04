@@ -1,137 +1,86 @@
-#include "ros/ros.h"
-#include "sensor_msgs/Imu.h"
-#include "geometry_msgs/Twist.h"
-#include "std_msgs/Bool.h"
-#include <signal.h>
+#include <ros/ros.h>
+#include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Twist.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include <cmath>
-#include <tf/transform_datatypes.h>
 
-// 全局退出标记（Ctrl+C秒退）
-volatile bool g_quit = false;
+// 全局变量
+double current_yaw = 0.0;  // 当前偏航角
+double target_yaw = 0.0;   // 目标偏航角
+ros::Publisher cmd_vel_pub;
 
-// IMU核心数据
-float imu_angular_z = 0.0;    // 绕z轴角速度 (rad/s)
-float accumulated_angle = 0.0;// 累计转向角度 (rad)
-ros::Time last_imu_time;      // 上一次IMU数据时间戳
+// IMU回调：四元数转欧拉角，获取yaw
+void imu_callback(const sensor_msgs::Imu::ConstPtr& imu_msg) {
+    tf2::Quaternion q(
+        imu_msg->orientation.x,
+        imu_msg->orientation.y,
+        imu_msg->orientation.z,
+        imu_msg->orientation.w
+    );
+    tf2::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    current_yaw = yaw;
 
-// ROS发布器
-ros::Publisher vel_pub;       // 速度指令发布器
-
-// 核心配置（严格按流程图要求）
-const float TURN_SPEED = 0.5;       // 转向角速度 (rad/s)
-const float TARGET_ANGLE = M_PI;    // 目标转向角度：180°（弧度）
-const std::string IMU_TOPIC = "/imu/data";    // IMU数据话题
-const std::string CMD_VEL_TOPIC = "/cmd_vel"; // 速度控制话题
-
-// ===================== 信号处理函数（Ctrl+C安全退出） =====================
-void sigint_handler(int sig) {
-    ROS_WARN("=== [IMU Spin Node] Ctrl+C Pressed! Stop & Exit ===");
-    g_quit = true;
-    
-    // 退出前强制停止小车
-    geometry_msgs::Twist stop_msg;
-    stop_msg.linear.x = 0.0;
-    stop_msg.angular.z = 0.0;
-    vel_pub.publish(stop_msg);
-    
-    ros::shutdown();
-    exit(0);
+    ROS_INFO("当前偏航角: %.2f rad | %.2f °", 
+             current_yaw, current_yaw * 180.0 / M_PI);
 }
 
-// ===================== IMU数据回调（读取IMU数据） =====================
-void imu_data_callback(const sensor_msgs::Imu::ConstPtr& imu_msg) {
-    if (g_quit) return;
+// 自旋180°主逻辑
+void rotate_180_degree() {
+    geometry_msgs::Twist cmd_vel;
+    target_yaw = current_yaw + M_PI;
 
-    // 1. 解析IMU绕z轴角速度（流程图：读取IMU数据）
-    imu_angular_z = imu_msg->angular_velocity.z;
+    // 角度归一化到 [-π, π]
+    if (target_yaw > M_PI)  target_yaw -= 2 * M_PI;
+    if (target_yaw < -M_PI) target_yaw += 2 * M_PI;
 
-    // 2. 计算累计转向角度（角速度积分）
-    if (last_imu_time.isValid()) {
-        double time_diff = (ros::Time::now() - last_imu_time).toSec();
-        accumulated_angle += imu_angular_z * time_diff;
-    }
-    last_imu_time = ros::Time::now();
+    ROS_INFO("开始旋转180° | 目标偏航角: %.2f rad", target_yaw);
 
-    // 实时打印角度（调试用）
-    ROS_INFO_THROTTLE(0.5, "Current Angle: %.1f deg (Target: 180 deg)", 
-                      fabs(accumulated_angle) * 180 / M_PI);
-}
-
-// ===================== 核心功能：180°自旋（严格按流程图） =====================
-void spin_180_deg() {
-    ROS_WARN("=== [IMU Spin Node] Start 180° Spin ===");
-    accumulated_angle = 0.0; // 重置累计角度
-
-    ros::Rate rate(100); // 100Hz高频检查角度
-
-    // 流程图：自旋 → 判断是否到180° → 否则继续
-    while (!g_quit && fabs(accumulated_angle) < TARGET_ANGLE) {
-        // 发布转向指令
-        geometry_msgs::Twist vel_msg;
-        vel_msg.linear.x = 0.0;                    // 自旋时不前进
-        vel_msg.angular.z = TURN_SPEED;            // 右转（如需左转改-TURN_SPEED）
-        vel_pub.publish(vel_msg);
-
-        ros::spinOnce(); // 处理IMU回调，更新角度
-        rate.sleep();
-    }
-
-    // 流程图：达到180° → 停止
-    geometry_msgs::Twist stop_msg;
-    stop_msg.linear.x = 0.0;
-    stop_msg.angular.z = 0.0;
-    vel_pub.publish(stop_msg);
-
-    ROS_WARN("=== [IMU Spin Node] 180° Spin Done! Actual Angle: %.1f deg ===",
-             fabs(accumulated_angle) * 180 / M_PI);
-}
-
-// ===================== 电机使能函数 =====================
-void enable_motor() {
-    ros::Publisher enable_pub = ros::NodeHandle().advertise<std_msgs::Bool>("/robot/motor/enable", 1);
-    std_msgs::Bool enable_msg;
-    enable_msg.data = true;
-    
-    // 多次发布确保使能生效
-    for (int i = 0; i < 3; i++) {
-        enable_pub.publish(enable_msg);
-        ros::Duration(0.1).sleep();
-    }
-    ROS_WARN("=== [IMU Spin Node] Motor Enabled ===");
-    ros::Duration(0.5).sleep();
-}
-
-// ===================== 主函数（节点入口） =====================
-int main(int argc, char **argv) {
-    // 初始化ROS节点（禁用默认信号处理）
-    ros::init(argc, argv, "w2a_imu_spin_node", ros::init_options::NoSigintHandler);
-    ros::NodeHandle nh;
-
-    // 注册Ctrl+C信号处理
-    signal(SIGINT, sigint_handler);
-
-    // 初始化订阅器/发布器
-    ros::Subscriber imu_sub = nh.subscribe(IMU_TOPIC, 10, imu_data_callback);
-    vel_pub = nh.advertise<geometry_msgs::Twist>(CMD_VEL_TOPIC, 10);
-
-    // 电机使能
-    enable_motor();
-
-    // 打印启动信息
-    ROS_INFO("=== [IMU Spin Node] Started (Follow Flow Chart) ===");
-    ROS_INFO("1. Read IMU Data → 2. Spin → 3. Stop at 180°");
-    ROS_INFO("Press Ctrl+C to exit");
-
-    // 自动执行180°自旋（严格按流程图：启动即执行）
-    spin_180_deg();
-
-    // 自旋完成后，保持节点存活（可按Ctrl+C退出）
     ros::Rate rate(10);
-    while (!g_quit && ros::ok()) {
+    while (ros::ok()) {
+        double diff = target_yaw - current_yaw;
+
+        // 处理角度环绕，走最短路径
+        if (diff > M_PI)  diff -= 2 * M_PI;
+        if (diff < -M_PI) diff += 2 * M_PI;
+
+        // 到达目标（误差 < 2.86°）
+        if (fabs(diff) < 0.05) {
+            cmd_vel.angular.z = 0.0;
+            cmd_vel_pub.publish(cmd_vel);
+            ROS_INFO("✅ 180°旋转完成！");
+            break;
+        }
+
+        // 设置旋转速度
+        cmd_vel.angular.z = 0.3 * (diff > 0 ? 1 : -1);
+        cmd_vel_pub.publish(cmd_vel);
+
         ros::spinOnce();
         rate.sleep();
     }
+}
 
-    ROS_INFO("=== [IMU Spin Node] Exited Safely ===");
+int main(int argc, char** argv) {
+    ros::init(argc, argv, "imu_rotate_180");
+    ros::NodeHandle nh;
+
+    ros::Subscriber imu_sub = nh.subscribe("/imu/data", 10, imu_callback);
+    cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
+
+    // 等待IMU数据初始化
+    ros::Rate init_rate(10);
+    while (ros::ok() && current_yaw == 0.0) {
+        ros::spinOnce();
+        init_rate.sleep();
+    }
+
+    // 执行180°自旋
+    rotate_180_degree();
+
+    ros::spin();
     return 0;
 }
+

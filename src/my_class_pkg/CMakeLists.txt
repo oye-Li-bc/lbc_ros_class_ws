@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   tf2_ros
   upros_message
+  move_base_msgs
 )
 
 # 2. 添加消息/服务/动作文件
@@ -34,6 +35,12 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   CATKIN_DEPENDS roscpp rospy std_msgs message_runtime actionlib actionlib_msgs
 )
+
+# 编译主题发布者与订阅者
+add_executable(ros_publisher_node src/ros_publisher.cpp)
+target_link_libraries(ros_publisher_node ${catkin_LIBRARIES})
+add_executable(ros_subscriber_node src/ros_subscriber.cpp)
+target_link_libraries(ros_subscriber_node ${catkin_LIBRARIES})
 
 # 5. 包含目录
 include_directories(${catkin_INCLUDE_DIRS})
@@ -95,4 +102,25 @@ target_link_libraries(ros_log ${catkin_LIBRARIES})
 #机械臂抓取AQ码小块
 add_executable(tag_grab_node src/tag_grab.cpp)
 target_link_libraries(tag_grab_node ${catkin_LIBRARIES})
+
+#连续自旋
+add_executable(continuous_spin_node src/continuous_spin_node.cpp)
+target_link_libraries(continuous_spin_node ${catkin_LIBRARIES})
+
+#激光雷达获取信息
+add_executable(ros_scan_node src/ros_scan.cpp)
+target_link_libraries(ros_scan_node ${catkin_LIBRARIES})
+
+
+## 激光雷达 mask 诊断工具
+add_executable(scan_mask_diag_node src/scan_mask_diag.cpp)
+target_link_libraries(scan_mask_diag_node ${catkin_LIBRARIES})
+
+#雷达避障
+add_executable(ros_avoid_node src/ros_avoid.cpp)
+target_link_libraries(ros_avoid_node ${catkin_LIBRARIES})
+
+#biaodiandaohang
+add_executable(movebase_client_node src/movebase_client.cpp)
+target_link_libraries(movebase_client_node ${catkin_LIBRARIES})
 
