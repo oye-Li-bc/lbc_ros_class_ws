@@ -1,6 +1,20 @@
-# lbc_ros_class_ws
+# ROS Robotics Lab
+
+![ROS Robotics Lab 项目封面](.github/readme/cover.svg)
+
+![ROS NOETIC](https://img.shields.io/badge/ROS%20NOETIC-project-516d64)
+[![Portfolio](https://img.shields.io/badge/oye-portfolio-516d64)](https://oye-li-bc.github.io/)
 
 机器人 ROS 课程配套 catkin 工作空间，覆盖**话题/服务/动作、参数、调试可视化、机器人仿真、视觉、激光雷达、SLAM 导航、语音与大模型**等实验。
+
+**[环境依赖](#environment) · [构建](#build) · [实验索引](#experiments) · [课程备注](#notes)**
+
+<picture>
+  <source media="(max-width: 600px)" srcset=".github/readme/workflow-mobile.svg">
+  <img src=".github/readme/workflow.svg" alt="项目学习与运行路线概览，完整步骤及依赖见下文说明">
+</picture>
+
+<a id="environment"></a>
 
 ## 环境
 
@@ -20,6 +34,8 @@
 └── README.md
 ```
 
+<a id="build"></a>
+
 ## 构建
 
 ```bash
@@ -31,6 +47,8 @@ source devel/setup.bash
 之后每开一个新终端都需要 `source devel/setup.bash`（或写进 `~/.bashrc`）。
 
 ---
+
+<a id="experiments"></a>
 
 ## 实验索引
 
@@ -209,7 +227,13 @@ rosrun my_class_pkg llm_chat.py
 
 ---
 
+<a id="notes"></a>
+
 ## 备注
 
 - 仓库根目录的 `2026-03-25-23-02-49.bag` 是课程录制的数据包，可用 `rosbag play` 回放。
 - 课程依赖的 `upros_*` 系列功能包未包含在本仓库内，需另行获取并放入 `src/` 后重新 `catkin_make`。
+
+---
+
+[个人作品集](https://oye-li-bc.github.io/) · [可编辑封面与配图说明](.github/readme/README.md)
