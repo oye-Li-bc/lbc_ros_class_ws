@@ -1,6 +1,6 @@
 # ROS Robotics Lab
 
-![ROS Robotics Lab 项目封面](.github/readme/cover.svg)
+![ROS Robotics Lab 项目封面](.github/readme/cover-imagegen.webp)
 
 ![ROS NOETIC](https://img.shields.io/badge/ROS%20NOETIC-project-516d64)
 [![Portfolio](https://img.shields.io/badge/oye-portfolio-516d64)](https://oye-li-bc.github.io/)
@@ -236,4 +236,4 @@ rosrun my_class_pkg llm_chat.py
 
 ---
 
-[个人作品集](https://oye-li-bc.github.io/) · [可编辑封面与配图说明](.github/readme/README.md)
+[个人作品集](https://oye-li-bc.github.io/) · [封面来源与配图说明](.github/readme/README.md)
